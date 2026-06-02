@@ -33,11 +33,11 @@ class ClaudeAdapter(AgentAdapter):
         notify_script = Path(goalkeeper_cli.__file__).parent / "notify.py"
 
         hooks = settings.setdefault("hooks", {})
-        hooks["SessionStart"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude --event=SessionStart", "async": true}]}]
-        hooks["Notification"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude", "async": true}]}]
-        hooks["PermissionRequest"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude", "async": true}]}]
-        hooks["Stop"] = [{"hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude", "async": true}]}]
-        hooks["StopFailure"] = [{"hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude", "async": true}]}]
+        hooks["SessionStart"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude --event=SessionStart", "async": True}]}]
+        hooks["Notification"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude", "async": True}]}]
+        hooks["PermissionRequest"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude", "async": True}]}]
+        hooks["Stop"] = [{"hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude", "async": True}]}]
+        hooks["StopFailure"] = [{"hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Claude", "async": True}]}]
 
         with open(settings_path, "w") as f:
             json.dump(settings, f, indent=2)

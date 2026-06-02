@@ -51,12 +51,14 @@ goalkeeper-package/
 
 ## 🔒 Security & Privacy Architecture
 
-GoalKeeper is designed with a premium, secure user experience that **does not expose the Telegram Bot Token** and requires **zero custom bot configuration** by default.
+GoalKeeper is designed with a premium, secure user experience that **does not expose the Telegram Bot Token** locally and requires **zero custom bot configuration** by default.
 
-### How it works:
-1. **The Shared Bot (`@GoalKeeperCliBot`)**: Instead of requiring every user to create a bot via `@BotFather`, users simply start a chat with `@GoalKeeperCliBot`. The bot instantly replies with their private, unique Telegram `chat_id` (e.g., `123456789`).
-2. **The Secure Message Proxy**: When sending a notification, goalkeeper sends a POST request containing only the message text and your `chat_id` to your secure proxy API (`https://api.goalkeeper.dev/notify`). The proxy server appends the secret `TELEGRAM_BOT_TOKEN` (hidden safely in the backend environment variables) and forwards the message to Telegram's servers.
-3. **No Local Token Storage**: Your local configuration `~/.goalkeeper.json` stores **zero bot tokens**—only your personal `chat_id`.
+### Key Details:
+1. **No Local Token Storage**: When running in the default shared-bot mode, your local configuration `~/.goalkeeper.json` stores **zero bot tokens**—only your personal `chat_id`.
+2. **The Hosted Proxy API**: To deliver notifications, goalkeeper sends a POST request containing your Telegram `chat_id` and the raw notification message text to a secure hosted proxy API (`https://api.goalkeeper.dev/notify`). The proxy server appends the secret `TELEGRAM_BOT_TOKEN` and forwards the message to Telegram's servers.
+3. **Privacy Choice**:
+   - By using the shared bot, you acknowledge that the hosted proxy receives your notification contents and `chat_id`.
+   - **For maximum privacy**: If you do not want the hosted proxy to see your notification contents, we strongly recommend configuring a custom Telegram Bot via `@BotFather` or self-hosting your own proxy endpoint (see "Self-Hosting" below).
 
 ---
 
@@ -135,7 +137,7 @@ goalkeeper clear
 ---
 
 ## 🔗 Migration & Contributing
-- For upgrading information, see the **[MIGRATION.md](file:///home/trader/goalkeeper-package/MIGRATION.md)** guide.
+- For upgrading information, see the **[MIGRATION.md](MIGRATION.md)** guide.
 - Want support for another AI CLI agent or have a feature request? Please raise an issue or submit a pull request on our GitHub Repository:
   👉 **[https://github.com/yuvaraj/goalkeeper-cli](https://github.com/yuvaraj/goalkeeper-cli)**
 

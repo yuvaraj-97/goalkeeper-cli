@@ -25,8 +25,8 @@ class AntigravityAdapter(AgentAdapter):
 
         gemini_hooks = {
             "hooks": {
-                "PreToolUse": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Antigravity --event=PreToolUse", "async": false}]}],
-                "Stop": [{"hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Antigravity --event=Stop", "async": true}]}]
+                "PreToolUse": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Antigravity --event=PreToolUse", "async": False}]}],
+                "Stop": [{"hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Antigravity --event=Stop", "async": True}]}]
             }
         }
 

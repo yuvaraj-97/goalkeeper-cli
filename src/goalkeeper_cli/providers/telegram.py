@@ -8,13 +8,20 @@ from goalkeeper_cli.core.config import load_config
 class TelegramProvider(NotificationProvider):
     def send(self, text: str) -> None:
         cfg = load_config()
-        token = cfg.get("telegram_bot_token")
-        chat_id = cfg.get("telegram_chat_id")
-        proxy_url = cfg.get("telegram_proxy_url", "https://api.goalkeeper.dev/notify")
+        self.send_with_config(
+            text=text,
+            token=cfg.get("telegram_bot_token"),
+            chat_id=cfg.get("telegram_chat_id"),
+            proxy_url=cfg.get("telegram_proxy_url", "https://api.goalkeeper.dev/notify")
+        )
 
+    def send_with_config(self, text: str, token: str | None, chat_id: int | str | None, proxy_url: str | None = None) -> None:
         if not chat_id:
             # Not configured — silently ignore
             return
+
+        if not proxy_url:
+            proxy_url = "https://api.goalkeeper.dev/notify"
 
         if not token:
             # Proxy-forwarded mode (Shared Bot)
@@ -28,7 +35,7 @@ class TelegramProvider(NotificationProvider):
         # Spawn detached background process to send Telegram alert asynchronously
         import tempfile
         script_content = (
-            "import urllib.request, json\n"
+            "import urllib.request, json, os\n"
             f"url = {repr(url)}\n"
             f"payload = {repr(payload)}\n"
             "data = json.dumps(payload).encode()\n"
@@ -37,6 +44,11 @@ class TelegramProvider(NotificationProvider):
             "    urllib.request.urlopen(req, timeout=10)\n"
             "except Exception:\n"
             "    pass\n"
+            "finally:\n"
+            "    try:\n"
+            "        os.remove(__file__)\n"
+            "    except Exception:\n"
+            "        pass\n"
         )
         
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False)

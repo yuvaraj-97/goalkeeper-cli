@@ -70,8 +70,11 @@ def parse_limit_duration(text: str) -> int:
             
     return None
 
-def add_to_queue(token: str, chat_id: int, timestamp: int, source: str, text: str) -> None:
+def add_to_queue(token: str, chat_id: int, timestamp: int, source: str, text: str, proxy_url: str | None = None) -> None:
     queue = load_queue()
+    if not proxy_url:
+        cfg = load_config()
+        proxy_url = cfg.get("telegram_proxy_url")
     # Deduplicate: remove any existing quota alert for this source
     queue = [item for item in queue if not (item.get("source") == source and "quota" in item.get("text", "").lower())]
     queue.append({
@@ -79,11 +82,12 @@ def add_to_queue(token: str, chat_id: int, timestamp: int, source: str, text: st
         "chat_id": chat_id,
         "timestamp": timestamp,
         "source": source,
-        "text": text
+        "text": text,
+        "proxy_url": proxy_url
     })
     save_queue(queue)
 
-def schedule_reset_alert(token: str, chat_id: int, seconds: int, source: str) -> tuple[str, str]:
+def schedule_reset_alert(token: str, chat_id: int, seconds: int, source: str, proxy_url: str | None = None) -> tuple[str, str]:
     reset_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
     reset_str  = reset_time.strftime("%I:%M %p")
     hrs, mins  = divmod(seconds // 60, 60)
@@ -92,7 +96,7 @@ def schedule_reset_alert(token: str, chat_id: int, seconds: int, source: str) ->
     target_timestamp = int(time.time() + seconds)
     alert_text = f"⏰ *[{source}] Rate Limit Reset!*\nYour {source} quota has refreshed. You can resume now! 🚀"
     
-    add_to_queue(token, chat_id, target_timestamp, source, alert_text)
+    add_to_queue(token, chat_id, target_timestamp, source, alert_text, proxy_url)
     return duration_str, reset_str
 
 def check_requires_permission(tool_name: str, tool_input: dict, source: str) -> bool:
@@ -193,6 +197,7 @@ def dispatch_event(event: GoalKeeperEvent) -> None:
     token = cfg.get("telegram_bot_token")
     chat_id = cfg.get("telegram_chat_id")
     notify_on_completion = cfg.get("notify_on_completion", False)
+    proxy_url = cfg.get("telegram_proxy_url")
 
     provider = TelegramProvider()
     source = event.source
@@ -210,7 +215,7 @@ def dispatch_event(event: GoalKeeperEvent) -> None:
                 
             target_timestamp = int(time.time() + duration_seconds)
             alert_text = f"⏰ *[{source}] Quota Refresh!*\nYour {source} usage window from your latest session has refreshed. You can resume at full capacity! 🚀"
-            add_to_queue(token, chat_id, target_timestamp, source, alert_text)
+            add_to_queue(token, chat_id, target_timestamp, source, alert_text, proxy_url)
 
     elif event.event_type == "permission_required":
         # Retrieve PreToolUse arguments
@@ -239,7 +244,7 @@ def dispatch_event(event: GoalKeeperEvent) -> None:
         candidate_text = json.dumps(payload)
         secs = parse_limit_duration(candidate_text)
         if secs:
-            duration_str, reset_str = schedule_reset_alert(token, chat_id, secs, source)
+            duration_str, reset_str = schedule_reset_alert(token, chat_id, secs, source, proxy_url)
             msg = f"⛔ *[{source}] Rate Limit Hit!*\n{source} has paused due to usage limits.\n\n⏳ Resets in *{duration_str}* (around *{reset_str}*)\nI'll notify you the moment it refreshes."
             provider.send(msg)
 

@@ -25,9 +25,9 @@ class CodexAdapter(AgentAdapter):
 
         codex_hooks = {
             "hooks": {
-                "SessionStart": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Codex --event=SessionStart", "async": false}]}],
-                "PermissionRequest": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Codex --event=PermissionRequest", "async": false}]}],
-                "Stop": [{"hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Codex --event=Stop", "async": false}]}]
+                "SessionStart": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Codex --event=SessionStart", "async": False}]}],
+                "PermissionRequest": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Codex --event=PermissionRequest", "async": False}]}],
+                "Stop": [{"hooks": [{"type": "command", "command": f"python3 {notify_script} --source=Codex --event=Stop", "async": False}]}]
             }
         }
 

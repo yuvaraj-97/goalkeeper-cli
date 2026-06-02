@@ -27,15 +27,20 @@ def run_cron_processing():
     kept_queue = []
     
     for item in queue:
-        if item["timestamp"] <= current_time:
-            token = item["token"]
-            chat_id = item["chat_id"]
-            text = item["text"]
+        if item.get("timestamp", 0) <= current_time:
+            token = item.get("token")
+            chat_id = item.get("chat_id")
+            text = item.get("text")
+            proxy_url = item.get("proxy_url")
             
             # Use TelegramProvider to dispatch alerts securely
             provider = TelegramProvider()
-            # Temporarily override config to route correctly
-            provider.send(text)
+            provider.send_with_config(
+                text=text,
+                token=token,
+                chat_id=chat_id,
+                proxy_url=proxy_url
+            )
         else:
             kept_queue.append(item)
             
@@ -71,6 +76,7 @@ def run_manual_schedule(source: str, time_str: str):
     cfg = load_config()
     token = cfg.get("telegram_bot_token")
     chat_id = cfg.get("telegram_chat_id")
+    proxy_url = cfg.get("telegram_proxy_url")
     if not chat_id:
         print("❌ Goalkeeper is not configured. Please run `goalkeeper --setup` first.")
         return
@@ -92,7 +98,7 @@ def run_manual_schedule(source: str, time_str: str):
         print("Format examples: '10m', '2h 15m', '11:29 PM', 'at 11:29'")
         return
 
-    duration_str, reset_str = schedule_reset_alert(token, chat_id, secs, source)
+    duration_str, reset_str = schedule_reset_alert(token, chat_id, secs, source, proxy_url)
     print(f"✅ Scheduled *{source}* quota alert.")
     print(f"⏳ Will alert in *{duration_str}* (around *{reset_str}*).")
 
@@ -113,7 +119,7 @@ def main():
         try:
             idx = sys.argv.index("--schedule-manual")
             source = sys.argv[idx + 1]
-            time_str = sys.argv[idx + 2]
+            time_str = " ".join(sys.argv[idx + 2:])
             run_manual_schedule(source, time_str)
         except Exception as e:
             print(f"Error parsing manual schedule: {e}")
