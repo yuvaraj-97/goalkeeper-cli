@@ -7,8 +7,9 @@ import sys
 import os
 import json
 import subprocess
+from pathlib import Path
 
-CONFIG_PATH = os.path.expanduser("~/.goalkeeper.json")
+CONFIG_PATH = Path.home() / ".goalkeeper.json"
 PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 NOTIFY_SCRIPT = os.path.join(PACKAGE_DIR, "notify.py")
 
@@ -188,13 +189,15 @@ def run_configure(args):
     cfg[key] = val
     with open(CONFIG_PATH, "w") as f:
         json.dump(cfg, f, indent=2)
-    print(f"✅ Successfully updated setting '{key}' to: {val}")
+    print(f"🎉 Updated '{key}' to: {val}")
 
 def install_goalkeeper():
     print("🚀 Installing GoalKeeper CLI integrations...")
 
     # 1. Install Cron Job
-    cron_cmd = f"* * * * * python3 {NOTIFY_SCRIPT} --cron"
+    import goalkeeper_cli
+    notify_script = Path(goalkeeper_cli.__file__).parent / "notify.py"
+    cron_cmd = f"* * * * * python3 {notify_script} --cron"
     try:
         current_cron = subprocess.run(["crontab", "-l"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True).stdout
         if cron_cmd not in current_cron:
@@ -206,76 +209,34 @@ def install_goalkeeper():
     except Exception as e:
         print(f"⚠️ Warning: Failed to install cron job: {e}")
 
-    # 2. Configure Claude Hooks
-    claude_path = os.path.expanduser("~/.claude/settings.json")
-    if os.path.exists(claude_path):
+    # 2. Load and execute adapters
+    from goalkeeper_cli.adapters import get_all_adapters
+    adapters = get_all_adapters()
+
+    print("\nDetected:")
+    detected = []
+    not_detected = []
+    
+    for adapter in adapters:
+        if adapter.is_installed():
+            print(f"✓ {adapter.name}")
+            detected.append(adapter)
+        else:
+            print(f"✗ {adapter.name}")
+            not_detected.append(adapter)
+
+    # Future compatibility mock/Aider placeholder for install log requirements
+    print("✗ Aider")
+
+    print("\nInstalled integrations:")
+    installed = []
+    for adapter in detected:
         try:
-            with open(claude_path, "r") as f:
-                settings = json.load(f)
-            
-            hooks = settings.setdefault("hooks", {})
-            hooks["SessionStart"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Claude --event=SessionStart", "async": true}]}]
-            hooks["Notification"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Claude", "async": true}]}]
-            hooks["PermissionRequest"] = [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Claude", "async": true}]}]
-            hooks["Stop"] = [{"hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Claude", "async": true}]}]
-            hooks["StopFailure"] = [{"hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Claude", "async": true}]}]
-
-            with open(claude_path, "w") as f:
-                json.dump(settings, f, indent=2)
-            print("✅ Configured Claude Code hooks (~/.claude/settings.json).")
+            adapter.install_hooks()
+            print(f"✓ {adapter.name}")
+            installed.append(adapter)
         except Exception as e:
-            print(f"⚠️ Warning: Failed to configure Claude hooks: {e}")
-    else:
-        print("ℹ️ Claude Code configuration directory not found. Skipping.")
-
-    # 3. Configure Codex Hooks
-    codex_dir = os.path.expanduser("~/.codex")
-    if os.path.exists(codex_dir):
-        try:
-            codex_hooks_path = os.path.join(codex_dir, "hooks.json")
-            codex_hooks = {
-                "hooks": {
-                    "SessionStart": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Codex --event=SessionStart", "async": false}]}],
-                    "PermissionRequest": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Codex --event=PermissionRequest", "async": false}]}],
-                    "Stop": [{"hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Codex --event=Stop", "async": false}]}]
-                }
-            }
-            with open(codex_hooks_path, "w") as f:
-                json.dump(codex_hooks, f, indent=2)
-            print("✅ Configured Codex hooks (~/.codex/hooks.json).")
-        except Exception as e:
-            print(f"⚠️ Warning: Failed to configure Codex hooks: {e}")
-    else:
-        print("ℹ️ Codex configuration directory not found. Skipping.")
-
-    # 4. Configure Antigravity Hooks
-    gemini_dir = os.path.expanduser("~/.gemini")
-    if os.path.exists(gemini_dir):
-        try:
-            config_dir = os.path.join(gemini_dir, "config")
-            os.makedirs(config_dir, exist_ok=True)
-            hooks_path = os.path.join(config_dir, "hooks.json")
-            
-            gemini_hooks = {
-                "hooks": {
-                    "PreToolUse": [{"matcher": "", "hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Antigravity --event=PreToolUse", "async": false}]}],
-                    "Stop": [{"hooks": [{"type": "command", "command": f"python3 {NOTIFY_SCRIPT} --source=Antigravity --event=Stop", "async": true}]}]
-                }
-            }
-            with open(hooks_path, "w") as f:
-                json.dump(gemini_hooks, f, indent=2)
-
-            # symlink for active path configuration
-            cli_dir = os.path.join(gemini_dir, "antigravity-cli")
-            if os.path.exists(cli_dir):
-                sym_path = os.path.join(cli_dir, "hooks.json")
-                if not os.path.exists(sym_path):
-                    os.symlink(hooks_path, sym_path)
-            print("✅ Configured Antigravity hooks (~/.gemini/config/hooks.json).")
-        except Exception as e:
-            print(f"⚠️ Warning: Failed to configure Antigravity hooks: {e}")
-    else:
-        print("ℹ️ Antigravity configuration directory not found. Skipping.")
+            print(f"✗ {adapter.name} (failed: {e})")
 
     print("\n🎉 GoalKeeper CLI successfully installed!")
     print("----------------------------------------------------")
@@ -299,6 +260,9 @@ Usage:
   goalkeeper config [<key> <value>]
       View current preferences, or dynamically toggle setting options.
       Example: goalkeeper config notify_on_completion true
+
+  goalkeeper run <command> [args...]
+      Wrap execution of a CLI command lacking hooks (e.g. goalkeeper run aider).
 
   goalkeeper schedule <source> <duration_or_time>
       Schedule a manual quota reset notification.
@@ -331,17 +295,27 @@ def main():
         install_goalkeeper()
     elif cmd == "config":
         run_configure(args[1:])
+    elif cmd == "run":
+        from goalkeeper_cli.core.runner import run_command_wrapper
+        run_command_wrapper(args[1:])
     elif cmd == "schedule":
         if len(args) < 3:
             print("Usage: goalkeeper schedule <source> <duration_or_time>")
             sys.exit(1)
         source = args[1]
         time_str = " ".join(args[2:])
-        subprocess.run(["python3", NOTIFY_SCRIPT, "--schedule-manual", source, time_str])
+        # Sibling notify script path resolution
+        import goalkeeper_cli
+        notify_script = Path(goalkeeper_cli.__file__).parent / "notify.py"
+        subprocess.run(["python3", str(notify_script), "--schedule-manual", source, time_str])
     elif cmd in ("status", "queue"):
-        subprocess.run(["python3", NOTIFY_SCRIPT, "--status"])
+        import goalkeeper_cli
+        notify_script = Path(goalkeeper_cli.__file__).parent / "notify.py"
+        subprocess.run(["python3", str(notify_script), "--status"])
     elif cmd == "clear":
-        subprocess.run(["python3", NOTIFY_SCRIPT, "--clear"])
+        import goalkeeper_cli
+        notify_script = Path(goalkeeper_cli.__file__).parent / "notify.py"
+        subprocess.run(["python3", str(notify_script), "--clear"])
     else:
         print_help()
 

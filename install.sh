@@ -17,13 +17,13 @@ mkdir -p "$INSTALL_DIR"
 echo "📥 Fetching Goalkeeper package..."
 # Download standard source code structure to ~/.goalkeeper-cli/
 # (In production, this downloads from the GitHub release/archive)
-cp -r /home/trader/goalkeeper-package/* "$INSTALL_DIR/"
+cp -r "$HOME/goalkeeper-package/"* "$INSTALL_DIR/"
 
 cd "$INSTALL_DIR"
 
 # Install package locally for the current user
 echo "⚙️ Building and installing goalkeeper-cli..."
-python3 setup.py install --user
+python3 -m pip install --user --break-system-packages .
 
 # Run installer script to register cron and hooks
 echo "🔧 Configuring CLI integrations..."

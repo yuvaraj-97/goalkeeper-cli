@@ -1,6 +1,16 @@
 # 🥅 GoalKeeper CLI
 
-GoalKeeper is a persistent, zero-overhead notification agent that sends real-time Telegram alerts for permission prompts, rate limits, and rolling quota resets across developer command-line interfaces: **Claude Code (`claude`)**, **OpenAI Codex (`codex`)**, and **Google's Antigravity CLI (`agy`)**.
+GoalKeeper is a persistent, zero-overhead notification layer for AI coding agents. It sends real-time Telegram notifications (and supports future notification backends) for permission prompts, rate limits, task completions, and rolling quota resets across developer command-line interfaces: **Claude Code (`claude`)**, **OpenAI Codex (`codex`)**, and **Google's Antigravity CLI (`agy`)**.
+
+---
+
+## 🏛️ Extensible Architecture
+
+GoalKeeper is designed with a premium, extensible architecture:
+1. **Agent Adapters**: All agents conform to the `AgentAdapter` interface, which maps native events to a common event model.
+2. **Common Event Model**: Defines unified event objects (`GoalKeeperEvent`) including `session_start`, `permission_required`, `rate_limit_hit`, `quota_refresh`, `task_completed`, and `task_failed`.
+3. **Pluggable Notification Providers**: Integrates notifications via `NotificationProvider` backends (e.g. `TelegramProvider`, with future support for Slack, Discord, Pushover, etc.).
+4. **Event Dispatcher**: A single centralized dispatch pipeline (`dispatch_event`) to format notifications, schedule quota reset reminders, and log audits.
 
 ---
 
@@ -13,69 +23,14 @@ GoalKeeper is designed with a premium, secure user experience that **does not ex
 2. **The Secure Message Proxy**: When sending a notification, goalkeeper sends a POST request containing only the message text and your `chat_id` to your secure proxy API (`https://api.goalkeeper.dev/notify`). The proxy server appends the secret `TELEGRAM_BOT_TOKEN` (hidden safely in the backend environment variables) and forwards the message to Telegram's servers.
 3. **No Local Token Storage**: Your local configuration `~/.goalkeeper.json` stores **zero bot tokens**—only your personal `chat_id`.
 
-### Can other users see my notifications?
-**Absolutely not.** 
-In Telegram's protocol, every message must specify a destination `chat_id` which uniquely identifies the chat session between a specific user and the bot. 
-- Telegram routes notifications *only* to the user matching the target `chat_id` in the API call.
-- Even though all users send notifications through the same bot, **your notifications are completely private to your Telegram account and can never be intercepted or read by anyone else.**
-
----
-
-## 🛠️ Self-Hosting the Proxy Server (Serverless)
-
-If you are running your own fork of GoalKeeper, you can host your own proxy backend for free on **Vercel** or **Cloudflare Workers** in under 5 minutes.
-
-### Vercel / Node.js Proxy Endpoint:
-Create a file at `api/notify.js` inside a web repository:
-
-```javascript
-// api/notify.js
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { chat_id, text } = req.body;
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-
-  if (!token) {
-    return res.status(500).json({ error: 'Server token configuration missing' });
-  }
-
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chat_id,
-        text: text,
-        parse_mode: 'Markdown'
-      })
-    });
-
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-}
-```
-
-Add your `TELEGRAM_BOT_TOKEN` to your Vercel project environment variables, deploy, and configure your clients by running:
-```json
-{
-  "telegram_proxy_url": "https://your-vercel-domain.vercel.app/api/notify"
-}
-```
-
 ---
 
 ## 🚀 Installation
 
-GoalKeeper is packaged as a standard Python distribution. You can install it globally:
+GoalKeeper is packaged as a standard Python distribution. You can build and install it locally using:
 
 ```bash
-pip install goalkeeper-cli
+bash install.sh
 ```
 
 ### 1. Run Automated Integration Setup
@@ -83,12 +38,39 @@ Let goalkeeper automatically configure the hook pipelines and crontab entries:
 ```bash
 goalkeeper install
 ```
+This command outputs the detection and installation status for all supported agents:
+```
+Detected:
+✓ Claude Code
+✓ Codex
+✗ Aider
+
+Installed integrations:
+✓ Claude Code
+✓ Codex
+```
 
 ### 2. Configure Telegram
 Simply run the setup wizard and paste the Chat ID sent to you by the bot:
 ```bash
 goalkeeper --setup
 ```
+
+---
+
+## 🆕 Wrapping Hookless Agents (`goalkeeper run`)
+
+For AI coding agents lacking native hook support (e.g., Aider, Gemini CLI, OpenHands), you can wrap execution using:
+
+```bash
+goalkeeper run <command> [args...]
+```
+
+**Example:**
+```bash
+goalkeeper run aider --model gemini/gemini-1.5-pro
+```
+This executes the underlying process, streams outputs to the terminal, and automatically sends completion/failure notifications upon exit.
 
 ---
 
@@ -117,10 +99,10 @@ goalkeeper clear
 
 ---
 
-## 🔗 Contributing & Feature Requests
-Want support for another AI CLI agent (e.g. Aider, OpenHands) or have a feature request?
-Please raise an issue or submit a pull request on our GitHub Repository:
-👉 **[https://github.com/yuvaraj/goalkeeper-cli](https://github.com/yuvaraj/goalkeeper-cli)**
+## 🔗 Migration & Contributing
+- For upgrading information, see the **[MIGRATION.md](file:///home/trader/goalkeeper-package/MIGRATION.md)** guide.
+- Want support for another AI CLI agent or have a feature request? Please raise an issue or submit a pull request on our GitHub Repository:
+  👉 **[https://github.com/yuvaraj/goalkeeper-cli](https://github.com/yuvaraj/goalkeeper-cli)**
 
 ---
 
