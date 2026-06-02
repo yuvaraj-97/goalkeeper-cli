@@ -12,6 +12,41 @@ GoalKeeper is designed with a premium, extensible architecture:
 3. **Pluggable Notification Providers**: Integrates notifications via `NotificationProvider` backends (e.g. `TelegramProvider`, with future support for Slack, Discord, Pushover, etc.).
 4. **Event Dispatcher**: A single centralized dispatch pipeline (`dispatch_event`) to format notifications, schedule quota reset reminders, and log audits.
 
+### 📂 Directory Layout
+
+```
+goalkeeper-package/
+├── MIGRATION.md
+├── README.md
+├── install.sh
+├── pyproject.toml
+├── setup.py
+├── src/
+│   └── goalkeeper_cli/
+│       ├── __init__.py
+│       ├── cli.py
+│       ├── notify.py
+│       ├── adapters/
+│       │   ├── __init__.py
+│       │   ├── base.py
+│       │   ├── claude.py
+│       │   ├── codex.py
+│       │   └── antigravity.py
+│       ├── core/
+│       │   ├── config.py
+│       │   ├── dispatcher.py
+│       │   ├── event.py
+│       │   └── runner.py
+│       └── providers/
+│           ├── base.py
+│           └── telegram.py
+└── tests/
+    ├── test_adapter_detection.py
+    ├── test_event_mapping.py
+    ├── test_notification_dispatch.py
+    └── test_quota_scheduling.py
+```
+
 ---
 
 ## 🔒 Security & Privacy Architecture
