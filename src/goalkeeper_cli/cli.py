@@ -171,7 +171,8 @@ def run_configure(args):
     key = args[0]
     val_str = args[1].lower().strip()
     
-    if key not in cfg:
+    STANDARD_KEYS = ("telegram_bot_token", "telegram_chat_id", "telegram_proxy_url", "notify_on_completion")
+    if key not in cfg and key not in STANDARD_KEYS:
         print(f"⚠️ Warning: '{key}' is not a standard goalkeeper setting, but setting it anyway.")
 
     if val_str in ("true", "1", "yes", "y"):
