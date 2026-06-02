@@ -93,6 +93,20 @@ Simply run the setup wizard and paste the Chat ID sent to you by the bot:
 goalkeeper --setup
 ```
 
+#### 🤖 Non-Interactive / AI Setup
+If you are configuring GoalKeeper via an AI agent or automated script, you can completely bypass the interactive setup wizard by writing your settings directly to `~/.goalkeeper.json`:
+
+```json
+{
+  "telegram_chat_id": 123456789,
+  "telegram_bot_token": null,
+  "telegram_proxy_url": "https://api.goalkeeper.dev/notify",
+  "notify_on_completion": false
+}
+```
+
+Replace `123456789` with your actual Telegram Chat ID (which you can get instantly by messaging `@GoalKeeperCliBot`). If you want to use your own custom bot, set your token in `"telegram_bot_token"`.
+
 ---
 
 ## 🆕 Wrapping Hookless Agents (`goalkeeper run`)

@@ -29,5 +29,10 @@ python3 -m pip install --user --break-system-packages .
 echo "🔧 Configuring CLI integrations..."
 ~/.local/bin/goalkeeper install
 
-# Automatically run setup wizard
-~/.local/bin/goalkeeper --setup
+# Automatically run setup wizard if in interactive shell
+if [ -t 0 ]; then
+    ~/.local/bin/goalkeeper --setup
+else
+    echo "ℹ️ Non-interactive terminal detected. Bypassing setup wizard."
+    echo "👉 To configure Telegram manually, write settings to ~/.goalkeeper.json or run: goalkeeper --setup"
+fi
