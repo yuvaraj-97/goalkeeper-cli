@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import subprocess
+from typing import Optional, Union
 from goalkeeper_cli.providers.base import NotificationProvider
 from goalkeeper_cli.core.config import load_config
 
@@ -15,7 +16,13 @@ class TelegramProvider(NotificationProvider):
             proxy_url=cfg.get("telegram_proxy_url", "https://api.goalkeeper.dev/notify")
         )
 
-    def send_with_config(self, text: str, token: str | None, chat_id: int | str | None, proxy_url: str | None = None) -> None:
+    def send_with_config(
+        self,
+        text: str,
+        token: Optional[str],
+        chat_id: Optional[Union[int, str]],
+        proxy_url: Optional[str] = None,
+    ) -> None:
         if not chat_id:
             # Not configured — silently ignore
             return

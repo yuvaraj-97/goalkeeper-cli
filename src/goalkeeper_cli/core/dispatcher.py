@@ -4,6 +4,7 @@ import re
 import time
 import datetime
 from pathlib import Path
+from typing import Optional
 from goalkeeper_cli.core.event import GoalKeeperEvent
 from goalkeeper_cli.core.config import load_config, load_queue, save_queue, load_state, save_state
 from goalkeeper_cli.providers.telegram import TelegramProvider
@@ -70,7 +71,7 @@ def parse_limit_duration(text: str) -> int:
             
     return None
 
-def add_to_queue(token: str, chat_id: int, timestamp: int, source: str, text: str, proxy_url: str | None = None) -> None:
+def add_to_queue(token: str, chat_id: int, timestamp: int, source: str, text: str, proxy_url: Optional[str] = None) -> None:
     queue = load_queue()
     if not proxy_url:
         cfg = load_config()
@@ -87,7 +88,7 @@ def add_to_queue(token: str, chat_id: int, timestamp: int, source: str, text: st
     })
     save_queue(queue)
 
-def schedule_reset_alert(token: str, chat_id: int, seconds: int, source: str, proxy_url: str | None = None) -> tuple[str, str]:
+def schedule_reset_alert(token: str, chat_id: int, seconds: int, source: str, proxy_url: Optional[str] = None) -> tuple[str, str]:
     reset_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
     reset_str  = reset_time.strftime("%I:%M %p")
     hrs, mins  = divmod(seconds // 60, 60)
