@@ -524,6 +524,10 @@ def main():
                 stop_reason = hook_input.get("stop_reason", "unknown")
                 send_async(token, chat_id,
                            f"⚠️ *[{source}] stopped with an error*\n`{stop_reason}`")
+            else:
+                # Turn/Prompt completed successfully
+                if cfg.get("notify_on_completion", False):
+                    send_async(token, chat_id, f"✅ *[{source}] Turn Completed!*\nThe agent has finished its response and is waiting for your input.")
 
         print(json.dumps({}))
         sys.exit(0)

@@ -117,6 +117,12 @@ def setup_wizard():
         else:
             print("❌ Setup cancelled.")
             return
+
+    # Notification Preference Prompt
+    print("\n🔔 Notification Preferences:")
+    choice_nc = input("👉 Receive Telegram notifications when a task/prompt response completes? [y/N, default: n]: ").strip().lower()
+    notify_on_completion = choice_nc in ("y", "yes")
+
     cfg = {}
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH) as f:
@@ -124,6 +130,7 @@ def setup_wizard():
     cfg["telegram_bot_token"] = token
     cfg["telegram_chat_id"] = chat_id
     cfg["telegram_proxy_url"] = proxy_url
+    cfg["notify_on_completion"] = notify_on_completion
     with open(CONFIG_PATH, "w") as f:
         json.dump(cfg, f, indent=2)
     print(f"🎉 Saved to {CONFIG_PATH}")
@@ -141,6 +148,46 @@ def setup_wizard():
         print("📨 Test message sent successfully!")
     except Exception as e:
         print(f"⚠️ Failed to send test message: {e}")
+
+def run_configure(args):
+    if not os.path.exists(CONFIG_PATH):
+        print("❌ Goalkeeper is not configured. Please run: goalkeeper --setup first.")
+        return
+
+    with open(CONFIG_PATH, "r") as f:
+        cfg = json.load(f)
+
+    if not args:
+        print("🥅 Current GoalKeeper Settings:")
+        for k, v in cfg.items():
+            print(f"  {k}: {v}")
+        return
+
+    if len(args) < 2:
+        print("Usage: goalkeeper config <key> <value>")
+        print("Example: goalkeeper config notify_on_completion true")
+        return
+
+    key = args[0]
+    val_str = args[1].lower().strip()
+    
+    if key not in cfg:
+        print(f"⚠️ Warning: '{key}' is not a standard goalkeeper setting, but setting it anyway.")
+
+    if val_str in ("true", "1", "yes", "y"):
+        val = True
+    elif val_str in ("false", "0", "no", "n"):
+        val = False
+    else:
+        try:
+            val = int(val_str)
+        except ValueError:
+            val = args[1]
+
+    cfg[key] = val
+    with open(CONFIG_PATH, "w") as f:
+        json.dump(cfg, f, indent=2)
+    print(f"✅ Successfully updated setting '{key}' to: {val}")
 
 def install_goalkeeper():
     print("🚀 Installing GoalKeeper CLI integrations...")
@@ -248,6 +295,10 @@ Usage:
   goalkeeper install
       Install background cron queue and configure all installed CLI agents (Claude, Codex, Antigravity).
 
+  goalkeeper config [<key> <value>]
+      View current preferences, or dynamically toggle setting options.
+      Example: goalkeeper config notify_on_completion true
+
   goalkeeper schedule <source> <duration_or_time>
       Schedule a manual quota reset notification.
       Examples:
@@ -277,6 +328,8 @@ def main():
         setup_wizard()
     elif cmd == "install":
         install_goalkeeper()
+    elif cmd == "config":
+        run_configure(args[1:])
     elif cmd == "schedule":
         if len(args) < 3:
             print("Usage: goalkeeper schedule <source> <duration_or_time>")
