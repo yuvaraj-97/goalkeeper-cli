@@ -16,7 +16,6 @@ GoalKeeper is designed with a premium, extensible architecture:
 
 ```
 goalkeeper-package/
-├── MIGRATION.md
 ├── README.md
 ├── install.sh
 ├── pyproject.toml
@@ -150,8 +149,7 @@ goalkeeper clear
 
 ---
 
-## 🔗 Migration & Contributing
-- For upgrading information, see the **[MIGRATION.md](MIGRATION.md)** guide.
+## 🔗 Contributing
 - Want support for another AI CLI agent or have a feature request? Please raise an issue or submit a pull request on our GitHub Repository:
   👉 **[https://github.com/yuvaraj/goalkeeper-cli](https://github.com/yuvaraj/goalkeeper-cli)**
 
